@@ -24,10 +24,9 @@ bool BlendShape::read(const string& filename) {
 	fin.read( reinterpret_cast<char*>(&nVerts), sizeof(int) );			// nVerts = 11510
 	fin.read( reinterpret_cast<char*>(&nFaces), sizeof(int) );			// nFaces = 11540
 
-	// Load neutral expression B_0
-	neutralExpr.resize(nVerts);
-	fin.read( reinterpret_cast<char*>(&neutralExpr[0]), sizeof(vert_t) * nVerts );
+	nShapes++;	// plus the neutral shape
 
+	// Load neutral expression B_0
 	exprList.resize(nShapes);
 	// Load other expressions B_i ( 1 <= i <= 46 )
 	for( int exprId=0; exprId<nShapes; exprId++ ){

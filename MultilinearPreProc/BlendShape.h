@@ -13,18 +13,22 @@ public:
 	BlendShape(void);
 	~BlendShape(void);
 
+	const shape_t& expression(int idx) const {
+		return exprList[idx];
+	}
+
+	int expressionCount() const {
+		return nShapes;
+	}	
+
 public:
 	bool read(const string& filename);
-
-protected:
-	void drawShape(const shape_t& s);
 
 private:
 	int nVerts;
 	int nShapes;
 	int nFaces;
 
-	shape_t neutralExpr;
 	vector<shape_t> exprList;
 };
 
