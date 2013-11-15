@@ -33,9 +33,17 @@ void testTensors() {
 
 	t3.print();
 
-	t3.unfold(0).print();
+	cout << "unfold in mode 0:" << endl;
+	Tensor2<float> t3_unfold0 = t3.unfold(0);
+	t3_unfold0.print();
+	Tensor3<float> t3new = Tensor3<float>::fold(t3_unfold0, 0, 2, 3, 4);
+	t3new.print();
 
-	t3.unfold(1).print();
+	cout << "unfold in mode 1:" << endl;
+	Tensor2<float> t3_unfold1 = t3.unfold(1);
+	t3_unfold1.print();
+	Tensor3<float> t3new2 = Tensor3<float>::fold(t3_unfold1, 1, 2, 3, 4);
+	t3new2.print();
 }
 
 int main() {	

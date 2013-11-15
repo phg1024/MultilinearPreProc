@@ -207,6 +207,59 @@ public:
 		}
 	}
 
+	// fold a order 2 tensor to a order 3 tensor
+	static Tensor3<T> fold(const Tensor2<T>& t, int mid, int d0, int d1, int d2) {
+		switch( mid ) {
+		case 0:
+			{
+				// the tensor2 must be of the shape d0 x (d2 x d1)
+				Tensor3<T> t3(d0, d1, d2);
+				assert(t.dim(0) == d0 && t.dim(1) == d1 * d2);
+				for(int i=0;i<d0;i++) {
+					const Tensor1<T> ti = t(i);
+					for(int j=0, offset=0;j<d1;j++,offset+=d2) {
+						for(int k=0;k<d2;k++) {
+							t3(i, j, k) = ti(k+offset);
+						}
+					}
+				}
+				return t3;
+			}
+		case 1:
+			{
+				// the tensor2 must be of the shape d1 x (d0 x d3)
+				Tensor3<T> t3(d0, d1, d2);
+				assert(t.dim(0) == d1 && t.dim(1) == d0 * d2);
+				for(int i=0;i<d0;i++) {
+					for(int j=0;j<d1;j++) {
+						for(int k=0, offset=0;k<d2;k++, offset+=d0) {
+							t3(i, j, k) = t(j, i + offset);
+						}
+					}
+				}
+				return t3;
+			}
+		case 2:
+			{
+				// the tensor must be of the shape d2 x (d1 x d0)
+				Tensor3<T> t3(d0, d1, d2);
+				assert(t.dim(0) == d2 && t.dim(1) == d1*d0);
+				for(int i=0, offset=0;i<d0;i++, offset+=d1) {
+					for(int j=0;j<d1;j++) {
+						for(int k=0;k<d2;k++) {
+							t3(i, j, k) = t(k, j + offset);
+						}
+					}
+				}
+				return t3;
+			}
+		default:
+			{
+				throw "Invalid mode!";
+			}
+		}
+	}
+
 	// mode product with a vector
 	Tensor2<T> modeProduct(const Tensor1<T>& v, int mid) {
 		switch( mid ) {
@@ -232,10 +285,29 @@ public:
 		switch( mid ) {
 		case 0:
 			{
+				assert(M.dim(1) == d[0]);
+				// unfold the matrix in mode 0
+				Tensor2<T> tunfold = this->unfold(mid);
+
+				// do the multiplication to each column vector
+				Tensor1<T> col(d[0]);	// store the result for current column
+				for(int i=0;i<tunfold.dim(1);i++) {
+					for(int r=0;r<M.dim(0);r++) {
+						T sum = 0;
+						for(int c=0;c<M.dim(1);c++) {
+							sum += ;
+						}
+						col(r) = sum;
+					}
+					// copy back the result to tunfold
+				}
+
+				// fold the tensor again
 				break;
 			}
 		case 1:
 			{
+
 				break;
 			}
 		case 2:
@@ -293,4 +365,3 @@ private:
 	int d[3];
 	vector<Tensor2<T>> data;
 };
-
