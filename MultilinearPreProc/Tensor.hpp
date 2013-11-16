@@ -533,7 +533,7 @@ public:
 		try {
 			cout << "Reading tensor file " << filename << endl;
 			fstream fin;
-			fin.open(filename, ios::in);
+			fin.open(filename, ios::in | ios::binary);
 
 			fin.read(reinterpret_cast<char*>(&(d[0])), sizeof(int)*3);
 
@@ -562,7 +562,7 @@ public:
 		try {
 			cout << "writing tensor to file " << filename << endl;
 			fstream fout;
-			fout.open(filename, ios::out);
+			fout.open(filename, ios::out | ios::binary);
 
 			fout.write(reinterpret_cast<char*>(&(d[0])), sizeof(int)*3);
 

@@ -184,6 +184,17 @@ int main() {
 		<< tin.dim(1) << "x"
 		<< tin.dim(2) << endl;
 
+	float maxDiffio = 0;
+
+	for(int i=0;i<tin.dim(0);i++) {
+		for(int j=0;j<tin.dim(1);j++) {
+			for(int k=0;k<tin.dim(2);k++) {
+				maxDiffio = std::max(fabs(tin(i, j, k) - tcore(i, j, k)), maxDiffio);
+			}
+		}
+	}
+	cout << "Max difference io = " << maxDiffio << endl;
+
 	tin = tin.modeProduct(tus[0], 0).modeProduct(tus[1], 1);
 
 	cout << "Dimensions = " 
