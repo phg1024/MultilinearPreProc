@@ -204,6 +204,13 @@ public:
 		return data[i](j, k);
 	}
 
+	void resize(int l, int m, int n) {
+		data.resize(l);
+		for_each(data.begin(), data.end(), [=](Tensor2<T>& t){
+			t.resize(m, n);
+		});
+	}
+
 	int dim(int mid) const{
 		return d[mid];
 	}
@@ -436,7 +443,7 @@ public:
 	tuple<Tensor3<T>, vector<Tensor2<T>>> svd(
 			const vector<int>& modes,	// modes to perform svd
 			const vector<int>& dims		// truncated dimensions
-		) 
+		) const
 	{
 		vector<arma::fmat> U, V;
 		vector<arma::fvec> s;
@@ -519,6 +526,35 @@ public:
 			cout << title << " = " << endl;
 		for(int i=0;i<d[0];i++) {
 			data[i].print();
+		}
+	}
+
+	bool read(const string& filename) {
+		try {
+			cout << "Reading tensor file " << filename << endl;
+			fstream fin;
+			fin.open(filename, ios::in);
+
+			fin.read(reinterpret_cast<char*>(&(d[0])), sizeof(int)*3);
+
+			this->resize(d[0], d[1], d[2]);
+
+			for(int i=0;i<d[0];i++) {
+				Tensor2<T>& ti = data[i];
+				for(int j=0;j<d[1];j++) {
+					fin.read(reinterpret_cast<char*>(&(ti(j)(0))), sizeof(T)*d[2]);
+				}				
+			}
+
+			fin.close();
+
+			cout << "done." << endl;
+
+			return true;
+		}
+		catch( ... ) {
+			cerr << "Failed to read tensor from file " << filename << endl;
+			return false;
 		}
 	}
 

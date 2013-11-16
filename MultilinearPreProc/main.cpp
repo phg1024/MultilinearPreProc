@@ -96,8 +96,8 @@ void testTensors() {
 
 	int ms[3] = {0, 1, 2};
 	int ds[3] = {2, 3, 3};
-	vector<int> modes(ms, ms+2);
-	vector<int> dims(ds, ds+2);
+	vector<int> modes(ms, ms+3);
+	vector<int> dims(ds, ds+3);
 	auto comp2 = t3.svd(modes, dims);
 
 	tcore = std::get<0>(comp2);
@@ -116,11 +116,11 @@ void testTensors() {
 
 int main() {	
 	
-	/*
-	testTensors();
-	system("pause");
-	return 0;
-	*/
+	
+	//testTensors();
+	//system("pause");
+	//return 0;
+	
 
 	vector<BlendShape> shapes;
 
@@ -140,9 +140,9 @@ int main() {
 
 		shapes[i].read(ss.str());
 	}
-
-	// create an order 3 tensor for the blend shapes
 	int nCoords = nVerts * 3;
+
+	// create an order 3 tensor for the blend shapes	
 	Tensor3<float> t(nShapes, nExprs, nCoords);
 
 	// fill in the data
@@ -163,10 +163,10 @@ int main() {
 
 	cout << "Tensor assembled." << endl;
 
-	// perform svd
+	// perform svd to get core tensor
 	cout << "Performing SVD on the blendshapes ..." << endl;
-	int ms[3] = {0, 1};		// only the first two modes
-	int ds[3] = {50, 47};	// pick 50 for identity and 47 for expression
+	int ms[2] = {0, 1};		// only the first two modes
+	int ds[2] = {50, 47};	// pick 50 for identity and 47 for expression
 	vector<int> modes(ms, ms+2);
 	vector<int> dims(ds, ds+2);
 	auto comp2 = t.svd(modes, dims);
@@ -175,7 +175,34 @@ int main() {
 	tcore.write("blendshape_core.tensor");
 	cout << "SVD done." << endl;	
 
-	system("pause");
+	cout << "Validation begins ..." << endl;
+	Tensor3<float> tin;
+	tin.read("blendshape_core.tensor");
 
+	cout << "Core tensor dimensions = " 
+		<< tin.dim(0) << "x"
+		<< tin.dim(1) << "x"
+		<< tin.dim(2) << endl;
+
+	tin = tin.modeProduct(tus[0], 0).modeProduct(tus[1], 1);
+
+	cout << "Dimensions = " 
+		<< tin.dim(0) << "x"
+		<< tin.dim(1) << "x"
+		<< tin.dim(2) << endl;
+	float maxDiff = 0;
+
+	for(int i=0;i<tin.dim(0);i++) {
+		for(int j=0;j<tin.dim(1);j++) {
+			for(int k=0;k<tin.dim(2);k++) {
+				maxDiff = std::max(fabs(tin(i, j, k) - t(i, j, k)), maxDiff);
+			}
+		}
+	}
+
+	cout << "Max difference = " << maxDiff << endl;
+	cout << "done" << endl;
+
+	system("pause");
 	return 0;
 }
