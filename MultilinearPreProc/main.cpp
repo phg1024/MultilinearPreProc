@@ -10,14 +10,14 @@ void testTensors() {
 
 	t.print();
 
-	Tensor2<float> t2(5, 4);
+	Tensor2<float> t2(3, 2);
 	for(int i=0;i<t2.dim(0);i++) {
 		for(int j=0;j<t2.dim(1);j++) {
-			t2(i, j) = (float)rand();
+			t2(i, j) = (float)(rand() % 16);
 		}
 	}
 
-	t2.print();
+	t2.print("T2");
 
 	t2.unfold().print();
 
@@ -31,19 +31,87 @@ void testTensors() {
 		}
 	}
 
-	t3.print();
+	t3.print("T3");
 
 	cout << "unfold in mode 0:" << endl;
 	Tensor2<float> t3_unfold0 = t3.unfold(0);
-	t3_unfold0.print();
+	t3_unfold0.print("T30");
 	Tensor3<float> t3new = Tensor3<float>::fold(t3_unfold0, 0, 2, 3, 4);
-	t3new.print();
+	t3new.print("fold back");
 
 	cout << "unfold in mode 1:" << endl;
 	Tensor2<float> t3_unfold1 = t3.unfold(1);
-	t3_unfold1.print();
+	t3_unfold1.print("T31");
 	Tensor3<float> t3new2 = Tensor3<float>::fold(t3_unfold1, 1, 2, 3, 4);
-	t3new2.print();
+	t3new2.print("fold back");
+
+	cout << "unfold in mode 1:" << endl;
+	Tensor2<float> t3_unfold2 = t3.unfold(2);
+	t3_unfold2.print("T32");
+	Tensor3<float> t3new3 = Tensor3<float>::fold(t3_unfold2, 2, 2, 3, 4);
+	t3new3.print("fold back");
+
+	cout << "mode product" << endl;
+	Tensor3<float> tm0 = t3.modeProduct(t2, 0);
+	tm0.print("TM0");	
+
+	Tensor2<float> t22(3, 3);
+	for(int i=0;i<t22.dim(0);i++) {
+		for(int j=0;j<t22.dim(1);j++) {
+			t22(i, j) = (float)(rand() % 16);
+		}
+	}
+	t22.print("T22");
+
+	Tensor3<float> tm1 = t3.modeProduct(t22, 1);
+	tm1.print("TM1");
+
+	Tensor2<float> t23(3, 4);
+	for(int i=0;i<t23.dim(0);i++) {
+		for(int j=0;j<t23.dim(1);j++) {
+			t23(i, j) = (float)(rand() % 16);
+		}
+	}
+	t23.print("T23");
+
+	Tensor3<float> tm2 = t3.modeProduct(t23, 2);
+	tm2.print("TM2");
+
+	auto comp = t3.svd();
+	auto tcore = std::get<0>(comp);
+	auto tu0 = std::get<1>(comp);
+	auto tu1 = std::get<2>(comp);
+	auto tu2 = std::get<3>(comp);
+
+	tcore.print("core");
+	tu0.print("u0");
+	tu1.print("u1");
+	tu2.print("u2");
+
+	auto trecon = tcore.modeProduct(tu0, 0)
+		.modeProduct(tu1, 1)
+		.modeProduct(tu2, 2);
+	trecon.print("recon");
+	t3.print("ref");
+
+	int ms[3] = {0, 1, 2};
+	int ds[3] = {2, 3, 3};
+	vector<int> modes(ms, ms+2);
+	vector<int> dims(ds, ds+2);
+	auto comp2 = t3.svd(modes, dims);
+
+	tcore = std::get<0>(comp2);
+	auto tus = std::get<1>(comp2);
+	tcore.print("core");
+	trecon = tcore;
+	for(int i=0;i<modes.size();i++) {
+		auto tui = tus[i];
+		trecon = trecon.modeProduct(tui, modes[i]);
+		tui.print("ui");
+	}
+
+	trecon.print("recon");
+	t3.print("ref");
 }
 
 int main() {	

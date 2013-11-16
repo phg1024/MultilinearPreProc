@@ -1,12 +1,23 @@
 #pragma once
 
+#include <armadillo>
+
 template <typename T>
 class Tensor1
 {
 public:
 	Tensor1(void){}
 	Tensor1(int n):n(n) { data.resize(n); }
+	Tensor1(const Tensor1& other):
+		n(other.n), data(other.data)
+	{}
 	~Tensor1(){}
+
+	Tensor1<T>& operator=(const Tensor1<T>& other) {
+		n = other.n;
+		data = other.data;
+		return (*this);
+	}
 
 	const T& operator()(int i) const{
 		return data[i];
@@ -52,7 +63,18 @@ public:
 			t.resize(n);
 		});
 	}
+	Tensor2(const Tensor2& other){
+		d[0] = other.d[0]; d[1] = other.d[1];
+		data = other.data;
+	}
 	~Tensor2(){}
+
+	Tensor2<T>& operator=(const Tensor2<T>& other){
+		d[0] = other.d[0];
+		d[1] = other.d[1];
+		data = other.data;
+		return (*this);
+	}
 
 	const Tensor1<T>& operator()(int i) const {
 		return data[i];
@@ -97,7 +119,30 @@ public:
 		return t;
 	}
 
-	void print() const{
+	// convert the tensor to an armadillo format matrix
+	arma::fmat toMat() const {
+		arma::fmat m(d[0], d[1]);
+		for(int i=0;i<d[0];i++) {
+			const Tensor1<T>& ti = data[i];
+			for(int j=0;j<d[1];j++) {
+				m(i, j) = ti(j);
+			}
+		}
+		return m;
+	}
+
+	static Tensor2<T> fromMat(const arma::fmat& m) {
+		Tensor2<T> t(m.n_rows, m.n_cols);
+		for(int i=0;i<t.dim(0);i++) {
+			for(int j=0;j<t.dim(1);j++) {
+				t(i, j) = m(i, j);
+			}
+		}
+		return t;
+	}
+
+	void print(const string& title = "") const{
+		if( !title.empty() ) cout << title << " = " << endl;;
 		for(int i=0;i<d[0];i++) {
 			data[i].print();
 		}
@@ -131,6 +176,10 @@ public:
 		for_each(data.begin(), data.end(), [=](Tensor2<T>& t){
 			t.resize(m, n);
 		});
+	}
+	Tensor3(const Tensor3& other) {
+		d[0] = other.d[0]; d[1] = other.d[1]; d[2] = other.d[2];
+		data = other.data;
 	}
 	~Tensor3(void){}
 
@@ -261,7 +310,7 @@ public:
 	}
 
 	// mode product with a vector
-	Tensor2<T> modeProduct(const Tensor1<T>& v, int mid) {
+	Tensor2<T> modeProduct(const Tensor1<T>& v, int mid) const {
 		switch( mid ) {
 		case 0:
 			{
@@ -281,54 +330,190 @@ public:
 	}
 
 	// mode product with a matrix
-	Tensor3<T> modeProduct(const Tensor2<T>& M, int mid) {
+	Tensor3<T> modeProduct(const Tensor2<T>& M, int mid) const {
 		switch( mid ) {
 		case 0:
 			{
 				assert(M.dim(1) == d[0]);
-				// unfold the matrix in mode 0
-				Tensor2<T> tunfold = this->unfold(mid);
+				// unfold the tensor in mode 0
+				Tensor2<T> tunfold = this->unfold(0);
+
+				Tensor2<T> t2(M.dim(0), d[1] * d[2]);
 
 				// do the multiplication to each column vector
-				Tensor1<T> col(d[0]);	// store the result for current column
+				Tensor1<T> col(M.dim(0));	// store the result for current column
+				Tensor1<T> tcol(d[0]);		// column in the unfolded tensor
 				for(int i=0;i<tunfold.dim(1);i++) {
+					for(int j=0;j<tunfold.dim(0);j++) {
+						tcol(j) = tunfold(j, i);
+					}
 					for(int r=0;r<M.dim(0);r++) {
 						T sum = 0;
+						const Tensor1<T>& Mr = M(r);
 						for(int c=0;c<M.dim(1);c++) {
-							sum += ;
+							sum += Mr(c) * tcol(c);
 						}
 						col(r) = sum;
 					}
 					// copy back the result to tunfold
+					for(int j=0;j<M.dim(0);j++) {
+						t2(j, i) = col(j);
+					}
 				}
 
 				// fold the tensor again
-				break;
+				return Tensor3<T>::fold(t2, 0, M.dim(0), d[1], d[2]);
 			}
 		case 1:
 			{
+				assert(M.dim(1) == d[1]);
+				// unfold the tensor in mode 1
+				Tensor2<T> tunfold = this->unfold(1);
 
-				break;
+				Tensor2<T> t2(M.dim(0), d[0] * d[2]);
+
+				// do the multiplication to each column vector
+				Tensor1<T> col(M.dim(0));	// store the result for current column
+				Tensor1<T> tcol(d[1]);		// column in the unfolded tensor
+				for(int i=0;i<tunfold.dim(1);i++) {
+					for(int j=0;j<tunfold.dim(0);j++) {
+						tcol(j) = tunfold(j, i);
+					}
+					for(int r=0;r<M.dim(0);r++) {
+						T sum = 0;
+						const Tensor1<T>& Mr = M(r);
+						for(int c=0;c<M.dim(1);c++) {
+							sum += Mr(c) * tcol(c);
+						}
+						col(r) = sum;
+					}
+					// copy back the result to tunfold
+					for(int j=0;j<M.dim(0);j++) {
+						t2(j, i) = col(j);
+					}
+				}
+
+				return Tensor3<T>::fold(t2, 1, d[0], M.dim(0), d[2]);
 			}
 		case 2:
 			{
-				break;
+				assert(M.dim(1) == d[2]);
+				// unfold the tensor in mode 2
+				Tensor2<T> tunfold = this->unfold(2);
+
+				Tensor2<T> t2(M.dim(0), d[1] * d[0]);
+
+				// do the multiplication to each column vector
+				Tensor1<T> col(M.dim(0));	// store the result for current column
+				Tensor1<T> tcol(d[2]);		// column in the unfolded tensor
+				for(int i=0;i<tunfold.dim(1);i++) {
+					for(int j=0;j<tunfold.dim(0);j++) {
+						tcol(j) = tunfold(j, i);
+					}
+					for(int r=0;r<M.dim(0);r++) {
+						T sum = 0;
+						const Tensor1<T>& Mr = M(r);
+						for(int c=0;c<M.dim(1);c++) {
+							sum += Mr(c) * tcol(c);
+						}
+						col(r) = sum;
+					}
+					// copy back the result to tunfold
+					for(int j=0;j<M.dim(0);j++) {
+						t2(j, i) = col(j);
+					}
+				}
+
+				return Tensor3<T>::fold(t2, 2, d[0], d[1], M.dim(0));
 			}
 		}
 	}
 
-	// ignore the third mode
-	tuple<Tensor3<T>, vector<Tensor2<T>>> svd() const {
-		// unfold the tensor in mode 0 and compute the svd of the unfolded matrix
+	// svd on certain modes, with truncation
+	tuple<Tensor3<T>, vector<Tensor2<T>>> svd(
+			const vector<int>& modes,	// modes to perform svd
+			const vector<int>& dims		// truncated dimensions
+		) 
+	{
+		vector<arma::fmat> U, V;
+		vector<arma::fvec> s;
 
-		// unfold the tensor in mode 1 and compute the svd of the unfolded matrix
+		for(int i=0;i<modes.size();i++) {
+			int mid = modes[i];
 
-		// core tensor is then defined as T x0 U(0)' x0 U(1)'
+			// unfold in mode mid
+			Tensor2<T> t2 = this->unfold(mid);
+			// convert to armadillo matrix
+			arma::fmat m2 = t2.toMat();
 
-		// return the core, U(0) and U(1)
+			// compute svd
+			arma::fmat ui, vi;
+			arma::fvec si;
+			arma::svd(ui, si, vi, m2);
+
+			// store the svd results
+			U.push_back(ui); V.push_back(vi); s.push_back(si);
+		}
+
+		// decompose the tensor, with truncation
+		Tensor3<T> core = (*this);
+		vector<Tensor2<T>> tu;
+		for(int i=0;i<modes.size();i++) {
+			int mid = modes[i];
+			arma::fmat u_truncated = U[i].submat(arma::span::all, arma::span(0, dims[i]-1));
+			Tensor2<T> tui = Tensor2<T>::fromMat( u_truncated );
+			Tensor2<T> tuit = Tensor2<T>::fromMat( arma::trans(u_truncated) );
+
+			core = core.modeProduct(tuit, mid);
+			tu.push_back(tui);
+		}
+
+		return make_tuple(core, tu);
 	}
 
-	void print() {
+	tuple<Tensor3<T>, Tensor2<T>, Tensor2<T>, Tensor2<T>> svd() const {
+		// unfold the tensor in mode 0 and compute the svd of the unfolded matrix
+		Tensor2<T> t20 = this->unfold(0);
+		arma::fmat m20 = t20.toMat();
+		// compute svd
+		arma::fmat U0, V0;
+		arma::fvec s0;
+		arma::svd(U0, s0, V0, m20);
+
+		// unfold the tensor in mode 1 and compute the svd of the unfolded matrix
+		Tensor2<T> t21 = this->unfold(1);
+		arma::fmat m21 = t21.toMat(); 
+		// compute svd
+		arma::fmat U1, V1;
+		arma::fvec s1;
+		arma::svd(U1, s1, V1, m21);
+
+		// unfold the tensor in mode 2 and compute the svd of the unfolded matrix
+		Tensor2<T> t22 = this->unfold(2);
+		arma::fmat m22 = t22.toMat(); 
+		// compute svd
+		arma::fmat U2, V2;
+		arma::fvec s2;
+		arma::svd(U2, s2, V2, m22);
+
+		Tensor2<T> tu0 = Tensor2<T>::fromMat( (U0) );
+		Tensor2<T> tu0t = Tensor2<T>::fromMat( arma::trans(U0) );
+		Tensor2<T> tu1 = Tensor2<T>::fromMat( (U1) );
+		Tensor2<T> tu1t = Tensor2<T>::fromMat( arma::trans(U1) );
+		Tensor2<T> tu2 = Tensor2<T>::fromMat( (U2) );
+		Tensor2<T> tu2t = Tensor2<T>::fromMat( arma::trans(U2) );
+
+		// core tensor is then defined as T x0 U(0)' x0 U(1)'
+		Tensor3<T> core(d[0], d[1], d[2]);
+		core = this->modeProduct(tu0t, 0).modeProduct(tu1t, 1).modeProduct(tu2t, 2);
+
+		// return the core, U(0) and U(1)
+		return make_tuple(core, tu0, tu1, tu2);
+	}
+
+	void print(const string& title="") {
+		if( !title.empty() )
+			cout << title << " = " << endl;
 		for(int i=0;i<d[0];i++) {
 			data[i].print();
 		}

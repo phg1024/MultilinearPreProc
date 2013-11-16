@@ -21,6 +21,7 @@
 #include <tuple>
 #include <unordered_map>
 #include <unordered_set>
+#include <initializer_list>
 #include <vector>
 #include <valarray>
 #include <regex>
