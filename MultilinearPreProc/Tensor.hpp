@@ -209,6 +209,7 @@ public:
 	}
 
 	Tensor2<T> unfold(int mid) const {
+		cout << "unfolding tensor in mode " << mid << endl;
 		switch( mid ) {
 		case 0:{
 					Tensor2<T> t(d[0], d[1] * d[2]);
@@ -254,10 +255,12 @@ public:
 					throw "Invalid mode!";
 				 }
 		}
+		cout << "done." << endl;
 	}
 
 	// fold a order 2 tensor to a order 3 tensor
 	static Tensor3<T> fold(const Tensor2<T>& t, int mid, int d0, int d1, int d2) {
+		cout << "folding tensor in mode " << mid << endl;
 		switch( mid ) {
 		case 0:
 			{
@@ -440,7 +443,7 @@ public:
 
 		for(int i=0;i<modes.size();i++) {
 			int mid = modes[i];
-
+			cout << "svd on mode " << mid << endl;
 			// unfold in mode mid
 			Tensor2<T> t2 = this->unfold(mid);
 			// convert to armadillo matrix
@@ -449,8 +452,8 @@ public:
 			// compute svd
 			arma::fmat ui, vi;
 			arma::fvec si;
-			arma::svd(ui, si, vi, m2);
-
+			arma::svd_econ(ui, si, vi, m2, 'l');
+			cout << "done." << endl;
 			// store the svd results
 			U.push_back(ui); V.push_back(vi); s.push_back(si);
 		}
@@ -478,7 +481,7 @@ public:
 		// compute svd
 		arma::fmat U0, V0;
 		arma::fvec s0;
-		arma::svd(U0, s0, V0, m20);
+		arma::svd_econ(U0, s0, V0, m20, 'l');
 
 		// unfold the tensor in mode 1 and compute the svd of the unfolded matrix
 		Tensor2<T> t21 = this->unfold(1);
@@ -486,7 +489,7 @@ public:
 		// compute svd
 		arma::fmat U1, V1;
 		arma::fvec s1;
-		arma::svd(U1, s1, V1, m21);
+		arma::svd_econ(U1, s1, V1, m21, 'l');
 
 		// unfold the tensor in mode 2 and compute the svd of the unfolded matrix
 		Tensor2<T> t22 = this->unfold(2);
@@ -494,7 +497,7 @@ public:
 		// compute svd
 		arma::fmat U2, V2;
 		arma::fvec s2;
-		arma::svd(U2, s2, V2, m22);
+		arma::svd_econ(U2, s2, V2, m22, 'l');
 
 		Tensor2<T> tu0 = Tensor2<T>::fromMat( (U0) );
 		Tensor2<T> tu0t = Tensor2<T>::fromMat( arma::trans(U0) );

@@ -116,10 +116,11 @@ void testTensors() {
 
 int main() {	
 	
+	/*
 	testTensors();
 	system("pause");
 	return 0;
-	
+	*/
 
 	vector<BlendShape> shapes;
 
@@ -162,7 +163,17 @@ int main() {
 
 	cout << "Tensor assembled." << endl;
 
-	t.write("blendshape.tensor");
+	// perform svd
+	cout << "Performing SVD on the blendshapes ..." << endl;
+	int ms[3] = {0, 1};		// only the first two modes
+	int ds[3] = {50, 47};	// pick 50 for identity and 47 for expression
+	vector<int> modes(ms, ms+2);
+	vector<int> dims(ds, ds+2);
+	auto comp2 = t.svd(modes, dims);
+	auto tcore = std::get<0>(comp2);
+	auto tus = std::get<1>(comp2);	
+	tcore.write("blendshape_core.tensor");
+	cout << "SVD done." << endl;	
 
 	system("pause");
 
