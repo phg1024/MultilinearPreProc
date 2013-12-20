@@ -498,7 +498,7 @@ public:
 			Tensor2<T> tui = Tensor2<T>::fromMat( u_truncated );
 			Tensor2<T> tuit = Tensor2<T>::fromMat( arma::trans(u_truncated) );			
 			core = core.modeProduct(tuit, mid);
-			tu.push_back(tuit);
+			tu.push_back(tui);
 			
 			/*
 			arma::fmat u_truncated = U[i].submat( arma::span(0, dims[i]-1), arma::span::all );
