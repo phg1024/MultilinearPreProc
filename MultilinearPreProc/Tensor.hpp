@@ -493,12 +493,20 @@ public:
 		vector<Tensor2<T>> tu;
 		for(int i=0;i<modes.size();i++) {
 			int mid = modes[i];
+			
 			arma::fmat u_truncated = U[i].submat(arma::span::all, arma::span(0, dims[i]-1));
 			Tensor2<T> tui = Tensor2<T>::fromMat( u_truncated );
-			Tensor2<T> tuit = Tensor2<T>::fromMat( arma::trans(u_truncated) );
-
+			Tensor2<T> tuit = Tensor2<T>::fromMat( arma::trans(u_truncated) );			
 			core = core.modeProduct(tuit, mid);
-			tu.push_back(tui);
+			tu.push_back(tuit);
+			
+			/*
+			arma::fmat u_truncated = U[i].submat( arma::span(0, dims[i]-1), arma::span::all );
+			Tensor2<T> tui = Tensor2<T>::fromMat( u_truncated );
+			Tensor2<T> tuit = Tensor2<T>::fromMat( arma::trans(u_truncated) );			
+			core = core.modeProduct(tui, mid);
+			tu.push_back(tuit);
+			*/
 		}
 
 		return make_tuple(core, tu);

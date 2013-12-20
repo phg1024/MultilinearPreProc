@@ -96,7 +96,7 @@ void testTensors() {
 	t3.print("ref");
 
 	int ms[3] = {0, 1, 2};
-	int ds[3] = {2, 3, 3};
+	int ds[3] = {2, 3, 4};
 	vector<int> modes(ms, ms+3);
 	vector<int> dims(ds, ds+3);
 	auto comp2 = t3.svd(modes, dims);
