@@ -151,6 +151,29 @@ public:
 	template <typename TT>
 	friend ostream& operator<<(ostream& os, const Tensor2<TT>& t);
 
+	bool write(const string& filename) {
+		try {
+			cout << "writing tensor to file " << filename << endl;
+			fstream fout;
+			fout.open(filename, ios::out | ios::binary);
+
+			fout.write(reinterpret_cast<char*>(&(d[0])), sizeof(int)*2);
+
+			for(int i=0;i<d[0];i++) {
+				const Tensor1<T>& ti = data[i];
+				fout.write(reinterpret_cast<const char*>(&(ti(0))), sizeof(T)*d[1]);
+			}
+
+			fout.close();
+
+			cout << "done." << endl;
+			return true;
+		}
+		catch(...) {
+			cerr << "Failed to write tensor to file " << filename << endl;
+			return false;
+		}
+	}
 private:
 	int d[2];
 	vector<Tensor1<T>> data;

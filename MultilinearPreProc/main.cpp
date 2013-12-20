@@ -1,4 +1,5 @@
 #include "common.h"
+#include "utility.hpp"
 #include "BlendShape.h"
 #include "Tensor.hpp"
 
@@ -128,7 +129,7 @@ int main() {
 	const int nExprs = 47;				// 46 expressions + 1 neutral
 	const int nVerts = 11510;			// 11510 vertices for each mesh
 
-	const string path = "C:\\Users\\PhG\\Desktop\\Data\\FaceWarehouse_Data_0\\";
+	const string path = "C:\\Users\\Peihong\\Desktop\\Data\\FaceWarehouse_Data_0\\";
 	const string foldername = "Tester_";
 	const string bsfolder = "Blendshape";
 	const string filename = "shape.bs";
@@ -166,15 +167,21 @@ int main() {
 	// perform svd to get core tensor
 	cout << "Performing SVD on the blendshapes ..." << endl;
 	int ms[2] = {0, 1};		// only the first two modes
-	int ds[2] = {50, 47};	// pick 50 for identity and 47 for expression
+	int ds[2] = {50, 25};	// pick 50 for identity and 25 for expression
 	vector<int> modes(ms, ms+2);
 	vector<int> dims(ds, ds+2);
 	auto comp2 = t.svd(modes, dims);
-	auto tcore = std::get<0>(comp2);
-	auto tus = std::get<1>(comp2);	
-	tcore.write("blendshape_core.tensor");
 	cout << "SVD done." << endl;	
 
+	auto tcore = std::get<0>(comp2);
+	auto tus = std::get<1>(comp2);	
+	cout << "writing core tensor ..." << endl;
+	tcore.write("blendshape_core.tensor");
+	cout << "writing U tensors ..." << endl;
+	for(int i=0;i<tus.size();i++) {
+		tus[i].write("blendshape_u_" + toString(ms[i]) + ".tensor");
+	}
+	
 	cout << "Validation begins ..." << endl;
 	Tensor3<float> tin;
 	tin.read("blendshape_core.tensor");
