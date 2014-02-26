@@ -164,10 +164,29 @@ int main() {
 
 	cout << "Tensor assembled." << endl;
 
+	// create deformation map
+	Tensor2<float> distmap(nShapes, nVerts);
+	for(int i=0;i<shapes.size();i++) {
+		const BlendShape::shape_t& bsi0 = shapes[i].expression(0);
+		const BlendShape& bsi = shapes[i];
+		for(int j=1;j<bsi.expressionCount();j++) {
+			const BlendShape::shape_t& bsij = bsi.expression(j);
+
+			for(int k=0, cidx = 0;k<nVerts;k++, cidx+=3) {
+				const BlendShape::vert_t& v0 = bsi0[k];
+				const BlendShape::vert_t& v = bsij[k];
+				float dx = v.x - v0.x, dy = v.y - v0.y, dz = v.z - v0.z;
+				distmap(i, k) += sqrt(dx*dx+dy*dy+dz*dz);
+			}
+		}
+	}
+
+	distmap.write("distmap.txt");
+
 	// perform svd to get core tensor
 	cout << "Performing SVD on the blendshapes ..." << endl;
 	int ms[2] = {0, 1};		// only the first two modes
-	int ds[2] = {50, 25};	// pick 50 for identity and 25 for expression
+	int ds[2] = {50, 47};	// pick 50 for identity and 25 for expression
 	vector<int> modes(ms, ms+2);
 	vector<int> dims(ds, ds+2);
 	auto comp2 = t.svd(modes, dims);
