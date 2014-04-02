@@ -186,7 +186,7 @@ int main() {
 	// perform svd to get core tensor
 	cout << "Performing SVD on the blendshapes ..." << endl;
 	int ms[2] = {0, 1};		// only the first two modes
-	int ds[2] = {50, 47};	// pick 50 for identity and 25 for expression
+	int ds[2] = {150, 47};	// pick 50 for identity and 25 for expression
 	vector<int> modes(ms, ms+2);
 	vector<int> dims(ds, ds+2);
 	auto comp2 = t.svd(modes, dims);
